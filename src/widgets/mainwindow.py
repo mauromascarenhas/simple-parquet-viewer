@@ -126,7 +126,19 @@ class MainWindow(QMainWindow):
             lambda: QMessageBox.about(
                 self,
                 self.tr("About Simple Parquet Viewer"),
-                self.tr("Test")
+                self.tr(
+                    "<b>About Simple Parquet Viewer (SPV)</b><br />"
+                    f"v{APP_VERSION[0]}.{APP_VERSION[1]}.{APP_VERSION[2]}<br />"
+                    "<br />"
+                    "Simple Parquet Viewer is a simple GUI program to visualize and interact with "
+                    "data stored in Parquet files.<br />"
+                    "<br />"
+                    "SPV is distributed under the terms of GPLv3. You should have received a copy "
+                    "of the GNU General Public License along with this program.  If not, you can "
+                    "find it at <a href=\"https://www.gnu.org/licenses/gpl-3.0.html\">"
+                    "<span style=\"color: white; font-weight: bold;\">GNU's website</span></a>.<br />"
+                    "<br />"
+                )
             )
         )
 

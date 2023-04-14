@@ -5,7 +5,6 @@ Simple visualization tool for Parquet files.
 ## TODO
 
 - Translations
-- About
 - Package
 
 ## Generating icon
