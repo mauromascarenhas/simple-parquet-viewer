@@ -5,7 +5,6 @@ Simple visualization tool for Parquet files.
 ## TODO
 
 - Translations
-- Window state
 - About
 - Package
 

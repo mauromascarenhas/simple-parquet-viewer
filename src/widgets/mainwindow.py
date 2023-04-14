@@ -6,8 +6,11 @@ import pandas as pd
 from enum import Enum
 from pathlib import Path
 
-from PyQt6.QtGui import QIcon, QPixmap
-from PyQt6.QtCore import Qt, QObject, QThread, pyqtSignal, QDir, QAbstractTableModel, QModelIndex, QSize, QTimer
+from PyQt6.QtGui import QIcon, QPixmap, QCloseEvent
+from PyQt6.QtCore import (
+    Qt, QObject, QThread, pyqtSignal, QDir, QSettings,
+    QAbstractTableModel, QModelIndex, QSize, QTimer
+)
 from PyQt6.QtWidgets import (
     QMainWindow, QTableView, QWidget, QApplication, QToolBar,
     QVBoxLayout, QToolButton, QStatusBar, QVBoxLayout, QLabel,
@@ -82,9 +85,16 @@ class MainWindow(QMainWindow):
         self.__initWindow()
         if self.fp is not None: QTimer.singleShot(500, self.__readParquet)
     
+    def closeEvent(self, a0: QCloseEvent) -> None:
+        settings = QSettings("spv", "Simple Parquet Viewer")
+        settings.setValue("w_state", self.saveState())
+        settings.setValue("w_geometry", self.saveGeometry())
+        return super().closeEvent(a0)
+    
     def __initWindow(self) -> None:
         self.__tb = QToolBar()
         self.__tb.setIconSize(QSize(48, 48))
+        self.__tb.setObjectName("toolBar")
 
         self.__btOpenFile = QToolButton(self)
         self.__btOpenFile.setIcon(QIcon(QPixmap(imgPath("open.png"))))
@@ -142,8 +152,12 @@ class MainWindow(QMainWindow):
 
         self.__setupViz()
 
-        self.setMinimumSize(QSize(512, 512))
-        self.move(self.screen().geometry().center() - self.frameGeometry().center())
+        settings = QSettings("spv", "Simple Parquet Viewer")
+        if (settings.contains("w_geometry")): self.restoreGeometry(settings.value("w_geometry"))
+        else:
+            self.setMinimumSize(QSize(512, 512))
+            self.move(self.screen().geometry().center() - self.frameGeometry().center())
+        if (settings.contains("w_state")): self.restoreState(settings.value("w_state"))
     
     def __setupViz(self) -> None:
         cl = QVBoxLayout()
