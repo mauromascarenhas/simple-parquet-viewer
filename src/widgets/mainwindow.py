@@ -82,6 +82,7 @@ class MainWindow(QMainWindow):
         self.wt = QThread()
         self.wt.start()
 
+        self.setWindowTitle(self.tr("Simple Parquet Viewer"))
         self.__initWindow()
         if self.fp is not None: QTimer.singleShot(500, self.__readParquet)
     
@@ -95,6 +96,7 @@ class MainWindow(QMainWindow):
         self.__tb = QToolBar()
         self.__tb.setIconSize(QSize(48, 48))
         self.__tb.setObjectName("toolBar")
+        self.__tb.setContextMenuPolicy(Qt.ContextMenuPolicy.PreventContextMenu)
 
         self.__btOpenFile = QToolButton(self)
         self.__btOpenFile.setIcon(QIcon(QPixmap(imgPath("open.png"))))
@@ -128,17 +130,17 @@ class MainWindow(QMainWindow):
                 self.tr("About Simple Parquet Viewer"),
                 self.tr(
                     "<b>About Simple Parquet Viewer (SPV)</b><br />"
-                    f"v{APP_VERSION[0]}.{APP_VERSION[1]}.{APP_VERSION[2]}<br />"
+                    "v{}.{}.{}<br />"
                     "<br />"
                     "Simple Parquet Viewer is a simple GUI program to visualize and interact with "
                     "data stored in Parquet files.<br />"
                     "<br />"
                     "SPV is distributed under the terms of GPLv3. You should have received a copy "
-                    "of the GNU General Public License along with this program.  If not, you can "
+                    "of the GNU General Public License along with this program. If not, you can "
                     "find it at <a href=\"https://www.gnu.org/licenses/gpl-3.0.html\">"
                     "<span style=\"color: white; font-weight: bold;\">GNU's website</span></a>.<br />"
                     "<br />"
-                )
+                ).format(APP_VERSION[0], APP_VERSION[1], APP_VERSION[2])
             )
         )
 
@@ -158,7 +160,7 @@ class MainWindow(QMainWindow):
         self.addToolBar(self.__tb)
 
         sb = QStatusBar()
-        sb.showMessage(self.tr("Ready"))
+        sb.showMessage(self.tr("Ready!"))
 
         self.setStatusBar(sb)
 
@@ -253,7 +255,7 @@ class MainWindow(QMainWindow):
             if ("@" in filter): raise Exception(self.tr("Filter must not contain \"@\" (no support to query variables)."))
             self.__applyDFToView(self.df.query(filter, inplace = False), tv)
         except Exception as e:
-            QMessageBox.critical(self, self.tr("Filter error"), self.tr(f"Error when applying the requested filter. Details:\n{e}"))
+            QMessageBox.critical(self, self.tr("Filter error"), self.tr("Error when applying the requested filter. Details:\n{}").format(e))
     
     def __clearFilters(self, inp: QLineEdit, tv: QTableView) -> None:
         inp.setText("")
@@ -282,12 +284,12 @@ class MainWindow(QMainWindow):
         elif type_ == ExportType.PARQUET:
             ext = ".parquet"
             title = self.tr("Export Parquet")
-            filters = self.tr("CSV files (*.parquet);;All files (*.*)")
+            filters = self.tr("Parquet files (*.parquet);;All files (*.*)")
         
         fn = QFileDialog.getSaveFileName(self, title, os.path.join(os.path.dirname(self.fp), Path(self.fp).stem + ext), filters)
         if len(fn[0]):
             fp = fn[0] if fn[0].endswith(ext) else fn[0] + ext
-            self.statusBar().showMessage(self.tr(f"Exporting \"{fp}\"..."))
+            self.statusBar().showMessage(self.tr("Exporting \"{}\"...").format(fp))
             QApplication.processEvents()
 
             aw = AsyncWorker()
@@ -302,7 +304,7 @@ class MainWindow(QMainWindow):
         worker.deleteLater()
     
     def __exportComplete(self) -> None:
-        self.statusBar().showMessage(self.tr(f"The file has been exported successfully."), 5000)
+        self.statusBar().showMessage(self.tr("The file has been exported successfully!"), 5000)
         QTimer.singleShot(5200, lambda: self.statusBar().showMessage(self.tr("Ready!")))
     
     def __readingError(self) -> None:

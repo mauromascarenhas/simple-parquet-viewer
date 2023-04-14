@@ -4,7 +4,7 @@ Simple visualization tool for Parquet files.
 
 ## TODO
 
-- Translations
+- Readme
 - Package
 
 ## Generating icon
