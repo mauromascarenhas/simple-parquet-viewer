@@ -5,9 +5,15 @@ Simple visualization tool for Parquet files.
 ## TODO
 
 - Translations
+- Window state
 - About
-- Icon
 - Package
+
+## Generating icon
+
+```sh
+magick convert .\src\res\imgs\app_icon.svg -define icon:auto-resize=256,128,48,32,16 -background none -fuzz 10% -transparent white  .\src\res\imgs\app_icon.ico
+```
 
 ## Translations
 
