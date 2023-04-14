@@ -196,14 +196,15 @@ class MainWindow(QMainWindow):
             btA.clicked.connect(lambda: self.__applyFilter(edt.text(), tv))
 
             btC = QToolButton()
-            btA.setIcon(QIcon(imgPath("clear.png")))
-            btA.setToolTip(self.tr("Clear current filter"))
-            btA.clicked.connect(lambda: self.__clearFilters(edt, tv))
+            btC.setIcon(QIcon(imgPath("clear.png")))
+            btC.setToolTip(self.tr("Clear current filter"))
+            btC.clicked.connect(lambda: self.__clearFilters(edt, tv))
 
             hl = QHBoxLayout()
             hl.addWidget(lbl)
             hl.addWidget(edt)
             hl.addWidget(btA)
+            hl.addWidget(btC)
 
             cl.addLayout(hl)
             cl.addWidget(tv)
