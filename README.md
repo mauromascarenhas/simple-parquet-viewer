@@ -14,15 +14,37 @@ Alternatively you can install the distribution package available in the [release
 
 ## Usage
 
-In order to open the app, it is just necessary to call it from the shell (notice that *file* arg is optional):
+To open the app, it is just necessary to call it from the shell (notice that *path_to_file* arg is optional):
 
 ```sh
-spv path/to/parquet/file.parquet
+spv [path_to_file]
 ```
 
 ### Creating shortcut (Windows only)
 
-@TODO: Update content.
+In order to use the shortcut creation utility, the [pywin32](https://pypi.org/project/pywin32/) package must be already installed. Otherwise, you will have to install it by running either `pip install pywin32` or `pip install simple-parquet-viewer[windows]`.
+
+Since this is a GUI application, it would be easier to start it from a shortcut rather than the command line. Therefore, in order to make the shortcut creation easier, this application provides a convenience script for that purpose. By running following command, for instance, a shortcut for "*Simple Parquet Viewer*" must be created in the Start Menu:
+
+```cmd
+spv-shortcut
+```
+
+**NB.:** Icons generated using this utility are not automatically removed when this package is uninstalled. Therefore, you must remove them manually afterwards.
+
+#### Desktop shortcut
+
+The `spv-shortcut` utility also supports a valid *`dir_path`* as first argument, allowing you to generate a shortcut in custom directories, such as "*Desktop*". The following example demonstrates how to create a desktop shortcut for this application:
+
+```cmd
+spv-shortcut %USERPROFILE%\Desktop
+```
+
+In PowerShell:
+
+```powershell
+spv-shortcut $env:USERPROFILE\Desktop
+```
 
 ## Development
 
@@ -56,6 +78,6 @@ The usage of **i18n** script is quite straightforward: it is usually `python ./s
 
 In order to build this package, it is just necessary to run the following command in the sell:
 
-```toml
+```sh
 python -m build
 ```
