@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "simple-parquet-viewer"
+version = "0.9.0"
+authors = [
+  { name="Mauro Mascarenhas de Araújo", email="mauromascarenhas@users.noreply.github.com" },
+]
+description = "A simple (and lightweight) visualization tool for Parquet files."
+license = "GPL-3.0-or-later"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: OS Independent",
+]
+keywords = [
+    "Parquet",
+    "GUI",
+    "Viewer"
+]
+dependencies = [
+    "numpy~=1.24.2",
+    "pandas~=2.0.0",
+    "pyarrow",
+    "PyQt6~=6.5.0"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/mauromascarenhas/simple-parquet-viewer"
+"Bug Tracker" = "https://github.com/mauromascarenhas/simple-parquet-viewer/issues"
+
+[project.gui-scripts]
+spv = "simple_parquet_viewer.main:main"
+
+[tool.hatch.build]
+exclude = [
+    ".vscode/",
+    "scripts/"
+]
+artifacts = [
+    "*.ico",
+    "*.png",
+    "*.css",
+    "*.qm"
+]
+
+[tool.hatch.template.plugins.default]
+src-layout = true

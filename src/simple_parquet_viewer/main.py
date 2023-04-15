@@ -1,3 +1,5 @@
+#!/usr/bin/env pythonw
+
 import os
 import sys
 
@@ -5,7 +7,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import QTranslator, QLocale
 from PyQt6.QtWidgets import QApplication
 
-from widgets.mainwindow import MainWindow, APP_VERSION
+from .widgets.mainwindow import MainWindow, APP_VERSION
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 os.environ["SPV_SD_"] = SCRIPT_DIR
