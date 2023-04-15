@@ -50,10 +50,10 @@ exclude = [
     "scripts/"
 ]
 artifacts = [
-    "*.ico",
-    "*.png",
-    "*.css",
-    "*.qm"
+    "src/**/*.ico",
+    "src/**/*.png",
+    "src/**/*.css",
+    "src/**/*.qm"
 ]
 
 [tool.hatch.template.plugins.default]
