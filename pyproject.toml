@@ -29,9 +29,17 @@ dependencies = [
     "PyQt6~=6.5.0"
 ]
 
+[project.optional-dependencies]
+windows = [
+    "pywin32>=306"
+]
+
 [project.urls]
 "Homepage" = "https://github.com/mauromascarenhas/simple-parquet-viewer"
 "Bug Tracker" = "https://github.com/mauromascarenhas/simple-parquet-viewer/issues"
+
+[project.scripts]
+spv-shortcut = "simple_parquet_viewer.main:gen_shortcut"
 
 [project.gui-scripts]
 spv = "simple_parquet_viewer.main:main"
