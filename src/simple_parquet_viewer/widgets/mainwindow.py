@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (
     QProgressBar, QFileDialog, QMessageBox, QHBoxLayout, QLineEdit
 )
 
-APP_VERSION = (0, 9, 0)
+APP_VERSION = (0, 9, 1)
 
 def imgPath(fileName: str) -> str:
     return os.path.join(os.environ["SPV_SD_"], "res", "imgs", fileName)
