@@ -6,7 +6,7 @@ import pandas as pd
 from enum import Enum
 from pathlib import Path
 
-from PyQt6.QtGui import QIcon, QPixmap, QCloseEvent
+from PyQt6.QtGui import QIcon, QPixmap, QCloseEvent, QFont
 from PyQt6.QtCore import (
     Qt, QObject, QThread, pyqtSignal, QDir, QSettings,
     QAbstractTableModel, QModelIndex, QSize, QTimer
@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (
     QProgressBar, QFileDialog, QMessageBox, QHBoxLayout, QLineEdit
 )
 
-APP_VERSION = (0, 9, 1)
+APP_VERSION = (0, 10, 0)
 
 def imgPath(fileName: str) -> str:
     return os.path.join(os.environ["SPV_SD_"], "res", "imgs", fileName)
@@ -25,7 +25,8 @@ def imgPath(fileName: str) -> str:
 class ExportType(Enum):
     CSV = 1
     JSON = 2
-    PARQUET = 3
+    XLSX = 3
+    PARQUET = 4
 
 class TableModel(QAbstractTableModel):
     def __init__(self, data: pd.DataFrame,parent: typing.Optional[QObject] = None) -> None:
@@ -68,6 +69,8 @@ class AsyncWorker(QObject):
         if type_ == ExportType.CSV: df.to_csv(path, self.tr(",", "CSV Delimiter"), index = False)
         elif type_ == ExportType.JSON:
             with open(path, "r+") as f: df.to_json(f, "records")
+        elif type_ == ExportType.XLSX:
+            df.to_excel(path, self.tr("Sheet 1"), index =  False, engine = "xlsxwriter")
         elif type_ == ExportType.PARQUET: df.to_parquet(path, "pyarrow", "snappy", False)
         self.exportComplete.emit()
 
@@ -115,6 +118,12 @@ class MainWindow(QMainWindow):
         self.__btSaveCSV.setEnabled(False)
         self.__btSaveCSV.clicked.connect(lambda: self.__exportData(ExportType.CSV))
 
+        self.__btSaveXLSX = QToolButton(self)
+        self.__btSaveXLSX.setIcon(QIcon(imgPath("save_xlsx.png")))
+        self.__btSaveXLSX.setToolTip(self.tr("Save current view into a XLSX file"))
+        self.__btSaveXLSX.setEnabled(False)
+        self.__btSaveXLSX.clicked.connect(lambda: self.__exportData(ExportType.XLSX))
+
         self.__btSaveJSON = QToolButton(self)
         self.__btSaveJSON.setIcon(QIcon(QPixmap(imgPath("save_json.png"))))
         self.__btSaveJSON.setToolTip(self.tr("Save current view into a JSON file"))
@@ -152,6 +161,7 @@ class MainWindow(QMainWindow):
         self.__tb.addWidget(self.__btOpenFile)
         self.__tb.addWidget(self.__btSaveParquet)
         self.__tb.addWidget(self.__btSaveCSV)
+        self.__tb.addWidget(self.__btSaveXLSX)
         self.__tb.addWidget(self.__btSaveJSON)
         self.__tb.addSeparator()
         self.__tb.addWidget(self.__btAbout)
@@ -184,6 +194,7 @@ class MainWindow(QMainWindow):
             self.__tb.setEnabled(True)
             self.__btSaveCSV.setEnabled(False)
             self.__btSaveJSON.setEnabled(False)
+            self.__btSaveXLSX.setEnabled(False)
             self.__btSaveParquet.setEnabled(False)
             lbl = QLabel(self.tr("Please, select a valid Parquet file in order to view its content here :)"))
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -192,6 +203,7 @@ class MainWindow(QMainWindow):
             self.__tb.setEnabled(False)
             self.__btSaveCSV.setEnabled(False)
             self.__btSaveJSON.setEnabled(False)
+            self.__btSaveXLSX.setEnabled(False)
             self.__btSaveParquet.setEnabled(False)
             lbl = QLabel(self.tr("Loading data..."))
             lbl.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom)
@@ -207,6 +219,7 @@ class MainWindow(QMainWindow):
             self.__tb.setEnabled(True)
             self.__btSaveCSV.setEnabled(True)
             self.__btSaveJSON.setEnabled(True)
+            self.__btSaveXLSX.setEnabled(True)
             self.__btSaveParquet.setEnabled(True)
             
             tv = QTableView()
@@ -214,20 +227,25 @@ class MainWindow(QMainWindow):
 
             lbl = QLabel()
             lbl.setAccessibleName(self.tr("Filter"))
-            lbl.setPixmap(QPixmap(imgPath("filter.png")).scaled(16, 16, Qt.AspectRatioMode.KeepAspectRatioByExpanding))
+            lbl.setPixmap(QPixmap(imgPath("filter.png")).scaled(20, 20, Qt.AspectRatioMode.KeepAspectRatioByExpanding))
 
             edt = QLineEdit()
             edt.setToolTip(self.tr("Custom filter compatible with Pandas \"query\""))
             edt.returnPressed.connect(lambda: self.__applyFilter(edt.text(), tv))
+            edtF = edt.font()
+            edtF.setPointSize(12)
+            edt.setFont(edtF)
 
             btA = QToolButton()
             btA.setIcon(QIcon(imgPath("apply.png")))
             btA.setToolTip(self.tr("Apply filter"))
+            btA.setIconSize(QSize(20, 20))
             btA.clicked.connect(lambda: self.__applyFilter(edt.text(), tv))
 
             btC = QToolButton()
             btC.setIcon(QIcon(imgPath("clear.png")))
             btC.setToolTip(self.tr("Clear current filter"))
+            btC.setIconSize(QSize(20, 20))
             btC.clicked.connect(lambda: self.__clearFilters(edt, tv))
 
             hl = QHBoxLayout()
@@ -281,6 +299,10 @@ class MainWindow(QMainWindow):
             ext = ".json"
             title = self.tr("Export JSON")
             filters = self.tr("JSON files (*.json);;All files (*.*)")
+        elif type_ == ExportType.XLSX:
+            ext = ".xlsx"
+            title = self.tr("Export XLSX")
+            filters = self.tr("Excel sheet files (*.xlsx);;All files (*.*)")
         elif type_ == ExportType.PARQUET:
             ext = ".parquet"
             title = self.tr("Export Parquet")

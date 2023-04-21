@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "simple-parquet-viewer"
-version = "0.9.1"
+version = "0.10.0"
 authors = [
   { name="Mauro Mascarenhas de Araújo", email="mauromascarenhas@users.noreply.github.com" },
 ]
@@ -26,7 +26,8 @@ dependencies = [
     "numpy>=1.24",
     "pandas>=2.0",
     "pyarrow",
-    "PyQt6~=6.5"
+    "PyQt6~=6.5",
+    "xlsxwriter>=3.0"
 ]
 
 [project.optional-dependencies]
