@@ -19,18 +19,18 @@ if __name__ == "__main__":
             "--verbose",
             *files,
             "-ts",
-            os.path.join(".", "src", "res", "translations", f"{lang_}.ts")
+            os.path.join(".", "src", "simple_parquet_viewer", "res", "translations", f"{lang_}.ts")
         ], shell = True)
     elif type_ == "edit":
         print(os.path.join(".", ".venv", "Lib", "site-packages", "qt6_applications", "Qt", "bin", "linguist.exe"))
         call([
             os.path.join(".", "venv", "Lib", "site-packages", "qt6_applications", "Qt", "bin", "linguist.exe"),
-            os.path.join(".", "src", "res", "translations", f"{lang_}.ts")
+            os.path.join(".", "src", "simple_parquet_viewer", "res", "translations", f"{lang_}.ts")
         ], shell = True)
     elif type_ == "release":
         call([
             os.path.join(".", "venv", "Lib", "site-packages", "qt6_applications", "Qt", "bin", "lrelease.exe"),
-            os.path.join(".", "src", "res", "translations", f"{lang_}.ts")
+            os.path.join(".", "src", "simple_parquet_viewer", "res", "translations", f"{lang_}.ts")
         ], shell = True)
     else:
         print("Invalid arguments. Expected: (generate|edit|release) <LANG_CODE>.")
