@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "simple-parquet-viewer"
-version = "0.10.0"
+version = "0.11.0"
 authors = [
   { name="Mauro Mascarenhas de Araújo", email="mauromascarenhas@users.noreply.github.com" },
 ]
