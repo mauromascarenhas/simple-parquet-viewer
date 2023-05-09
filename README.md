@@ -66,7 +66,7 @@ magick convert ./src/res/imgs/app_icon.svg -define icon:auto-resize=256,128,48,3
 
 ### Translations
 
-The usage of **i18n** script is quite straightforward: it is usually `python ./scripts/i180n.py <COMMAND> <LANG_CODE>`, where the command depends on the translation step:
+The usage of **i18n** script is quite straightforward: it is usually `python ./scripts/i18n.py <COMMAND> <LANG_CODE>`, where the command depends on the translation step:
 
 - **generate**: Used to generate a new translation file or update the strings of an existing one;
 - **edit**: Convenience method to open **Qt Linguist** (an editor for translation files);
