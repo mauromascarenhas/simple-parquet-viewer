@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (
     QProgressBar, QFileDialog, QMessageBox, QHBoxLayout, QLineEdit
 )
 
-APP_VERSION = (0, 11, 0)
+APP_VERSION = (0, 11, 1)
 
 def imgPath(fileName: str) -> str:
     return os.path.join(os.environ["SPV_SD_"], "res", "imgs", fileName)
@@ -190,6 +190,8 @@ class MainWindow(QMainWindow):
 
         self.__setupViz()
 
+        self.__fw: QWidget = None
+
         settings = QSettings("spv", "Simple Parquet Viewer")
         if (settings.contains("w_geometry")): self.restoreGeometry(settings.value("w_geometry"))
         else:
@@ -203,6 +205,7 @@ class MainWindow(QMainWindow):
         
         cw = QWidget(self)
         cw.setLayout(cl)
+        self.__fw = None
         
         if self.fp is None:
             self.__tb.setEnabled(True)
@@ -267,8 +270,12 @@ class MainWindow(QMainWindow):
             hl.addWidget(edt)
             hl.addWidget(btA)
             hl.addWidget(btC)
+            
+            fw = QWidget()
+            fw.setLayout(hl)
+            self.__fw = fw
 
-            cl.addLayout(hl)
+            cl.addWidget(fw)
             cl.addWidget(tv)
         
         ocw = self.centralWidget()
@@ -297,6 +304,7 @@ class MainWindow(QMainWindow):
         self.df = None
         self.__setupViz()
         self.__tb.setEnabled(False)
+        QApplication.processEvents()
 
         self.wt = QThread()
         self.aw = ReadAsyncWorker(self.fp)
@@ -310,6 +318,7 @@ class MainWindow(QMainWindow):
         self.aw.readFail.connect(self.aw.deleteLater)
         self.wt.finished.connect(self.__clearWorkerThread)
         self.wt.start()
+        QApplication.processEvents()
     
     def __exportData(self, type_: ExportType) -> None:
         if type_ == ExportType.CSV:
@@ -335,8 +344,10 @@ class MainWindow(QMainWindow):
             fp = fn[0] if fn[0].endswith(ext) else fn[0] + ext
             self.statusBar().showMessage(self.tr("Exporting \"{}\"...").format(fp))
 
+            self.__fw.setEnabled(False)
             self.centralWidget().layout().addWidget(self.__pbExport)
             self.__pbExport.show()
+            QApplication.processEvents()
             
             self.wt = QThread()
             self.aw = ExportAsyncWorker(fp, self.dfV, type_)
@@ -347,6 +358,7 @@ class MainWindow(QMainWindow):
             self.aw.exportComplete.connect(self.aw.deleteLater)
             self.wt.finished.connect(self.__clearWorkerThread)
             self.wt.start()
+            QApplication.processEvents()
 
     def __clearWorkerThread(self) -> None:
         if self.wt is not None:
@@ -359,19 +371,22 @@ class MainWindow(QMainWindow):
         self.__setupViz()
     
     def __exportComplete(self) -> None:
+        self.__fw.setEnabled(True)
         self.__tb.setEnabled(True)
         self.centralWidget().layout().removeWidget(self.__pbExport)
         self.__pbExport.hide()
         self.activateWindow()
-        QMessageBox.information(self, self.tr("Exportation complete!"), self.tr("The file has been exported successfully!"), QMessageBox.StandardButton.Ok)
         self.statusBar().showMessage(self.tr("The file has been exported successfully!"), 5000)
         QTimer.singleShot(5200, lambda: self.statusBar().showMessage(self.tr("Ready!")))
+        QApplication.processEvents()
+        QMessageBox.information(self, self.tr("Exportation complete!"), self.tr("The file has been exported successfully!"), QMessageBox.StandardButton.Ok)
     
     def __readingError(self) -> None:
-        QMessageBox.critical(self, self.tr("Reading error"), self.tr("It was not possible to read the given file."), QMessageBox.StandardButton.Ok)
         self.fp = None
+        self.__fw.setEnabled(True)
         self.__tb.setEnabled(True)
         self.__setupViz()
+        QMessageBox.critical(self, self.tr("Reading error"), self.tr("It was not possible to read the given file."), QMessageBox.StandardButton.Ok)
     
     def __openParquet(self) -> None:
         fn = QFileDialog.getOpenFileName(
