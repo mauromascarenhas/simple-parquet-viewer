@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (
     QProgressBar, QFileDialog, QMessageBox, QHBoxLayout, QLineEdit
 )
 
-APP_VERSION = (0, 10, 0)
+APP_VERSION = (0, 11, 0)
 
 def imgPath(fileName: str) -> str:
     return os.path.join(os.environ["SPV_SD_"], "res", "imgs", fileName)
@@ -54,24 +54,34 @@ class TableModel(QAbstractTableModel):
                 return section
         return None
 
-class AsyncWorker(QObject):
-    dfReady = pyqtSignal(pd.DataFrame, QObject)
+class ReadAsyncWorker(QObject):
+    dfReady = pyqtSignal(pd.DataFrame)
     readFail = pyqtSignal()
-    exportComplete = pyqtSignal()
 
-    def readParquet(self, filePath: str) -> None:
-        try:
-            df = pd.read_parquet(filePath)
-            self.dfReady.emit(df, self)
+    def __init__(self, filePath: str) -> None:
+        super().__init__(None)
+        self.filePath = filePath
+    
+    def run(self) -> None:
+        try: self.dfReady.emit(pd.read_parquet(self.filePath))
         except: self.readFail.emit()
     
-    def exportFile(self, path: str, df: pd.DataFrame, type_: ExportType) -> None:
-        if type_ == ExportType.CSV: df.to_csv(path, self.tr(",", "CSV Delimiter"), index = False)
-        elif type_ == ExportType.JSON:
-            with open(path, "r+") as f: df.to_json(f, "records")
-        elif type_ == ExportType.XLSX:
-            df.to_excel(path, self.tr("Sheet 1"), index =  False, engine = "xlsxwriter")
-        elif type_ == ExportType.PARQUET: df.to_parquet(path, "pyarrow", "snappy", False)
+class ExportAsyncWorker(QObject):
+    exportComplete = pyqtSignal()
+    
+    def __init__(self, path: str, df: pd.DataFrame, type_: ExportType) -> None:
+        super().__init__(None)
+        self.df = df
+        self.path = path
+        self.type_ = type_
+
+    def run(self) -> None:
+        if self.type_ == ExportType.CSV: self.df.to_csv(self.path, self.tr(",", "CSV Delimiter"), index = False)
+        elif self.type_ == ExportType.JSON:
+            with open(self.path, "r+") as f: self.df.to_json(f, "records")
+        elif self.type_ == ExportType.XLSX:
+            self.df.to_excel(self.path, self.tr("Sheet 1"), index =  False, engine = "xlsxwriter")
+        elif self.type_ == ExportType.PARQUET: self.df.to_parquet(self.path, "pyarrow", "snappy", False)
         self.exportComplete.emit()
 
 class MainWindow(QMainWindow):
@@ -82,8 +92,8 @@ class MainWindow(QMainWindow):
         self.fp: typing.Optional[str] = args[1] if len(args) > 1 else None
         self.df: typing.Optional[pd.DataFrame] = None
         self.dfV: typing.Optional[pd.DataFrame] = None
-        self.wt = QThread()
-        self.wt.start()
+        self.wt: QThread = None
+        self.aw: ReadAsyncWorker | ExportAsyncWorker = None
 
         self.setWindowTitle(self.tr("Simple Parquet Viewer"))
         self.__initWindow()
@@ -168,6 +178,10 @@ class MainWindow(QMainWindow):
         self.__tb.addWidget(self.__btAboutQt)
 
         self.addToolBar(self.__tb)
+
+        self.__pbExport = QProgressBar()
+        self.__pbExport.setRange(0, 0)
+        self.__pbExport.hide()
 
         sb = QStatusBar()
         sb.showMessage(self.tr("Ready!"))
@@ -282,13 +296,20 @@ class MainWindow(QMainWindow):
     def __readParquet(self) -> None:
         self.df = None
         self.__setupViz()
-        QApplication.processEvents()
+        self.__tb.setEnabled(False)
 
-        aw = AsyncWorker()
-        aw.moveToThread(self.wt)
-        aw.dfReady.connect(self.__dataFrameReady)
-        aw.readFail.connect(self.__readingError)
-        QTimer.singleShot(0, lambda: aw.readParquet(self.fp))
+        self.wt = QThread()
+        self.aw = ReadAsyncWorker(self.fp)
+        self.aw.moveToThread(self.wt)
+        self.wt.started.connect(self.aw.run)
+        self.aw.dfReady.connect(self.__dataFrameReady)
+        self.aw.dfReady.connect(self.wt.quit)
+        self.aw.dfReady.connect(self.aw.deleteLater)
+        self.aw.readFail.connect(self.__readingError)
+        self.aw.readFail.connect(self.wt.quit)
+        self.aw.readFail.connect(self.aw.deleteLater)
+        self.wt.finished.connect(self.__clearWorkerThread)
+        self.wt.start()
     
     def __exportData(self, type_: ExportType) -> None:
         if type_ == ExportType.CSV:
@@ -310,28 +331,46 @@ class MainWindow(QMainWindow):
         
         fn = QFileDialog.getSaveFileName(self, title, os.path.join(os.path.dirname(self.fp), Path(self.fp).stem + ext), filters)
         if len(fn[0]):
+            self.__tb.setEnabled(False)
             fp = fn[0] if fn[0].endswith(ext) else fn[0] + ext
             self.statusBar().showMessage(self.tr("Exporting \"{}\"...").format(fp))
-            QApplication.processEvents()
 
-            aw = AsyncWorker()
-            aw.moveToThread(self.wt)
-            aw.exportComplete.connect(self.__exportComplete)
-            QTimer.singleShot(200, lambda: aw.exportFile(fp, self.dfV, type_))
-            QApplication.processEvents()
+            self.centralWidget().layout().addWidget(self.__pbExport)
+            self.__pbExport.show()
+            
+            self.wt = QThread()
+            self.aw = ExportAsyncWorker(fp, self.dfV, type_)
+            self.aw.moveToThread(self.wt)
+            self.wt.started.connect(self.aw.run)
+            self.aw.exportComplete.connect(self.__exportComplete)
+            self.aw.exportComplete.connect(self.wt.quit)
+            self.aw.exportComplete.connect(self.aw.deleteLater)
+            self.wt.finished.connect(self.__clearWorkerThread)
+            self.wt.start()
 
-    def __dataFrameReady(self, df: pd.DataFrame, worker: AsyncWorker) -> None:
+    def __clearWorkerThread(self) -> None:
+        if self.wt is not None:
+            self.wt.deleteLater()
+            self.wt = None
+
+    def __dataFrameReady(self, df: pd.DataFrame) -> None:
         self.df = df
+        self.__tb.setEnabled(True)
         self.__setupViz()
-        worker.deleteLater()
     
     def __exportComplete(self) -> None:
+        self.__tb.setEnabled(True)
+        self.centralWidget().layout().removeWidget(self.__pbExport)
+        self.__pbExport.hide()
+        self.activateWindow()
+        QMessageBox.information(self, self.tr("Exportation complete!"), self.tr("The file has been exported successfully!"), QMessageBox.StandardButton.Ok)
         self.statusBar().showMessage(self.tr("The file has been exported successfully!"), 5000)
         QTimer.singleShot(5200, lambda: self.statusBar().showMessage(self.tr("Ready!")))
     
     def __readingError(self) -> None:
         QMessageBox.critical(self, self.tr("Reading error"), self.tr("It was not possible to read the given file."), QMessageBox.StandardButton.Ok)
         self.fp = None
+        self.__tb.setEnabled(True)
         self.__setupViz()
     
     def __openParquet(self) -> None:
